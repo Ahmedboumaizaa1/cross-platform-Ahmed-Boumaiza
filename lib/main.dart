@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:waiting_room_app/waiting_room_card.dart';
+import 'package:waiting_room_app/waiting_room_manager.dart';
 
 void main() {
   runApp(const WaitingRoomApp());
@@ -10,29 +11,87 @@ class WaitingRoomApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Waiting Room',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const WaitingRoomScreen(),
+      home: WaitingRoomScreen(),
     );
   }
 }
 
-class WaitingRoomScreen extends StatelessWidget {
+class WaitingRoomScreen extends StatefulWidget {
   const WaitingRoomScreen({super.key});
+
+  @override
+  State<WaitingRoomScreen> createState() => _WaitingRoomScreenState();
+}
+
+class _WaitingRoomScreenState extends State<WaitingRoomScreen> {
+  final WaitingRoomManager _manager = WaitingRoomManager();
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _addClient() {
+    if (_controller.text.isNotEmpty) {
+      setState(() {
+        _manager.addClient(_controller.text);
+        _controller.clear();
+      });
+    }
+  }
+
+  void _removeClient(String name) {
+    setState(() {
+      _manager.removeClient(name);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Waiting Room'),
+        title: const Text('Local Waiting Room'),
       ),
-      body: const Center(
-        child: WaitingRoomCard(
-          name: 'Alice',
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Client Name',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _addClient,
+                  child: const Text('Add'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text('Clients in Queue: ${_manager.clients.length}'),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _manager.clients.length,
+                itemBuilder: (context, index) {
+                  final clientName = _manager.clients[index];
+                  return WaitingRoomCard(
+                    name: clientName,
+                    onRemove: () => _removeClient(clientName),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
